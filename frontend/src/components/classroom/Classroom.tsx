@@ -6,9 +6,10 @@ import * as THREE from 'three';
 
 interface ClassroomProps {
   onModelLoaded?: (model: Group) => void;
+  onBookshelfClick?: () => void;
 }
 
-export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded }) => {
+export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelfClick }) => {
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF('/assets/glb/classroom.glb');
   const [scaledScene, setScaledScene] = React.useState<Group | null>(null);
@@ -114,6 +115,7 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded }) => {
         child.userData.isInteractive = true;
         child.userData.interactionType = 'desk';
         child.userData.description = 'Scheduling and meeting management';
+        console.log(`✅ Marked ${child.name} as interactive desk`);
       }
       
       // Mark type elements as potential bulletin boards or signs
@@ -122,16 +124,33 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded }) => {
         child.userData.isInteractive = true;
         child.userData.interactionType = 'bulletin';
         child.userData.description = 'Q&A forum and discussions';
+        console.log(`✅ Marked ${child.name} as interactive bulletin board`);
       }
       
-      // Mark complex surfaces as potential bookshelves
-      if (name.includes('polysurface') && child.children.length > 5) {
+      // Mark ALL polySurface objects as potential bookshelves (let's be more inclusive)
+      if (name.includes('polysurface')) {
         interactiveObjects.bookshelves.push(child);
         child.userData.isInteractive = true;
         child.userData.interactionType = 'bookshelf';
         child.userData.description = 'AI-powered material creation and storage';
+        console.log(`✅ Marked ${child.name} as interactive bookshelf (${child.children.length} children)`);
+        
+        // Also mark all children as bookshelf parts
+        child.traverse((grandChild) => {
+          if (grandChild !== child) {
+            grandChild.userData.isInteractive = true;
+            grandChild.userData.interactionType = 'bookshelf';
+            grandChild.userData.description = 'AI-powered material creation and storage';
+            grandChild.userData.parentBookshelf = child.name;
+          }
+        });
       }
     });
+    
+    console.log(`📊 Interactive Objects Summary:`);
+    console.log(`  - Desks: ${interactiveObjects.desks.length}`);
+    console.log(`  - Bookshelves: ${interactiveObjects.bookshelves.length}`);
+    console.log(`  - Bulletin Boards: ${interactiveObjects.bulletinBoards.length}`);
     
     return interactiveObjects;
   };
@@ -150,24 +169,37 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded }) => {
   const handleObjectClick = (event: any) => {
     const object = event.object;
     
+    console.log(`🖱️ Clicked on: ${object.name}`, object.userData);
+    
     if (object.userData.isInteractive) {
+      console.log(`✅ Interactive object clicked: ${object.userData.interactionType}`);
+      
       // Handle different interaction types
       switch (object.userData.interactionType) {
         case 'desk':
+          console.log('🖥️ Desk clicked - opening scheduling interface...');
           // TODO: Open scheduling modal/interface
           break;
         case 'bookshelf':
-          // TODO: Open bookshelf interface
+          console.log('📚 Bookshelf clicked - triggering camera animation...');
+          // Trigger camera animation to focus on bookshelf
+          if (onBookshelfClick) {
+            onBookshelfClick();
+          }
           break;
         case 'bulletin':
+          console.log('📋 Bulletin board clicked - opening Q&A interface...');
           // TODO: Open bulletin board interface
           break;
         default:
+          console.log('❓ Unknown interaction type:', object.userData.interactionType);
           break;
       }
       
       // Prevent event bubbling
       event.stopPropagation();
+    } else {
+      console.log('❌ Non-interactive object clicked');
     }
   };
 

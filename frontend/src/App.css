@@ -68,6 +68,22 @@
   line-height: 1.3;
 }
 
+.reset-camera-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.reset-camera-btn:hover {
+  background: #5a6fd8;
+}
+
 /* Console message styling for better visibility */
 .console-message {
   font-family: 'Courier New', monospace;
