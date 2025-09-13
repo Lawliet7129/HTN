@@ -3,6 +3,11 @@
 import cohere
 import os
 
+from dotenv import load_dotenv
+from backend.constants.assignment_latex_template import ASSIGNMENT_LATEX_TEMPLATE
+
+load_dotenv()
+
 def beautify_text(raw_text: str) -> str:
     """
     Send raw OCR text to Cohere and a beautified version
@@ -22,17 +27,24 @@ def beautify_text(raw_text: str) -> str:
 
 
     prompt = (
-        "You are a helpful text formatting assistant.\n"
-        "Take the raw OCR output below and return a clean, well-formatted version."
-        "Do NOT add explanations — return only cleaned text. Preserve meaning.\n\n"
+        "You are a helpful LaTeX text formatting assistant.\n"
+        "Take the raw OCR output below and return a clean, well-formatted version latex code.\n"
+        "Important words of caution are the following "
+        "- Output valid LaTeX only \
+        - Do NOT include literal \n or other escape sequences \
+        - Preserve all math formatting and special symbols \
+        - Do NOT add explanations or extra text"
+        "Do NOT include literal '\\n' characters — use real LaTeX line breaks like '\\\\'.\n"
+        "Return only the LaTeX code.\n\n"
+        "Here is an example template you can follow for general LaTeX guidelines:\n" + ASSIGNMENT_LATEX_TEMPLATE + "\n\n"
         "INPUT:\n" + raw_text + "\n\nOUTPUT:\n"
         )
 
-
     response = co.chat(
-        model="command-a-03-2025", 
-        messages=[{"role": "user", "content": "hello world!"}]
+        model="command-a-03-2025",
+        messages=[{"role": "user", "content": prompt}]
     )
-
-
-    return response
+    temp = response.message.content[0].text.strip()
+    output = temp.replace("```latex", "").replace("```", "").strip()
+    output = output.replace("\\n", "\n")
+    return output
