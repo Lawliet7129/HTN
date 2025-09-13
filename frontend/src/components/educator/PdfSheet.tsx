@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { PdfDoc } from '../../types/pdf';
+import { PdfViewer } from './PdfViewer';
+import { generatePDFFromText, downloadPDF } from '../../utils/pdfGenerator';
 
 interface PdfSheetProps {
   pdf: PdfDoc | null;
@@ -19,6 +21,7 @@ export const PdfSheet: React.FC<PdfSheetProps> = ({
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
 
   React.useEffect(() => {
     if (pdf) {
@@ -42,39 +45,39 @@ export const PdfSheet: React.FC<PdfSheetProps> = ({
   };
 
   const handlePreview = () => {
-    console.log('Preview PDF:', pdf?.title);
-    // For now, this will open the PDF in a new tab
-    if (pdf?.id === '1') {
-      // Open the sample PDF
-      window.open('/sample-pdfs/CIS_3200_HW_2.pdf', '_blank');
-    } else {
-      // For other PDFs, show a message
-      alert('Preview functionality will be implemented with PDF.js or similar library');
-    }
+    setShowPdfViewer(true);
   };
 
   const handleOpen = () => {
-    console.log('Open PDF:', pdf?.title);
-    // Open PDF in new tab
-    if (pdf?.id === '1') {
-      window.open('/sample-pdfs/CIS_3200_HW_2.pdf', '_blank');
-    } else {
-      alert('Open functionality will be implemented with PDF.js or similar library');
-    }
+    setShowPdfViewer(true);
   };
 
-  const handleDownload = () => {
-    console.log('Download PDF:', pdf?.title);
-    // Download the PDF file
-    if (pdf?.id === '1') {
-      const link = document.createElement('a');
-      link.href = '/sample-pdfs/CIS_3200_HW_2.pdf';
-      link.download = `${pdf.title}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      alert('Download functionality will be implemented for uploaded PDFs');
+  const handleDownload = async () => {
+    if (!pdf) return;
+    
+    try {
+      if (pdf.id === '1') {
+        // Download the sample PDF
+        const link = document.createElement('a');
+        link.href = '/sample-pdfs/CIS_3200_HW_2.pdf';
+        link.download = `${pdf.title}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (pdf.coverUrl && pdf.coverUrl.startsWith('data:application/pdf')) {
+        // Download OCR-generated PDF
+        const response = await fetch(pdf.coverUrl);
+        const blob = await response.blob();
+        downloadPDF(blob, pdf.title);
+      } else {
+        // Generate PDF from OCR content (if available)
+        const ocrContent = `OCR Document: ${pdf.title}\n\nThis document was generated from OCR processing.`;
+        const pdfBlob = generatePDFFromText(ocrContent, pdf.title);
+        downloadPDF(pdfBlob, pdf.title);
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
     }
   };
 
@@ -661,6 +664,14 @@ export const PdfSheet: React.FC<PdfSheetProps> = ({
           }
         }
       `}</style>
+      
+      {showPdfViewer && pdf && (
+        <PdfViewer
+          pdfUrl={pdf.coverUrl || '/sample-pdfs/CIS_3200_HW_2.pdf'}
+          onClose={() => setShowPdfViewer(false)}
+          title={pdf.title}
+        />
+      )}
     </div>
   );
 };

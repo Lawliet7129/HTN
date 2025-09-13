@@ -91,3 +91,4 @@ def get_text_from_image_cohere(image_bytes: bytes) -> str:
         raise Exception(f"Cohere OCR failed: {e}")
 
 
+

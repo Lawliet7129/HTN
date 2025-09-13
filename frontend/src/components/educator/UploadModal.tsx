@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { PdfDoc } from '../../types/pdf';
 import { generatePdfThumbnailFromFile } from '../../utils/pdfThumbnail';
+import { convertImageToText, generatePdfFromText } from '../../utils/ocrService';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
   const [files, setFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [ocrResults, setOcrResults] = useState<{[key: string]: string}>({});
+  const [showOcrResults, setShowOcrResults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -48,6 +51,26 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const processImageWithOCR = async (file: File) => {
+    try {
+      const result = await convertImageToText(file);
+      if (result.success && result.data) {
+        setOcrResults(prev => ({
+          ...prev,
+          [file.name]: result.data!.beautified_text || result.data!.raw_text
+        }));
+        setShowOcrResults(true);
+        return result.data.beautified_text || result.data.raw_text;
+      } else {
+        console.error('OCR failed:', result.error);
+        return null;
+      }
+    } catch (error) {
+      console.error('OCR processing error:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -58,32 +81,50 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
     setIsUploading(true);
     
     try {
-      // Find the first PDF file to generate thumbnail from
-      const pdfFile = files.find(file => file.type === 'application/pdf');
+      // Check if we have image files for OCR processing
+      const imageFiles = files.filter(file => file.type.startsWith('image/'));
+      const pdfFiles = files.filter(file => file.type === 'application/pdf');
       
+      let finalTitle = title.trim();
+      let finalContent = '';
       let thumbnailDataUrl: string | undefined;
       
-      if (pdfFile) {
+      // Process images with OCR if any
+      if (imageFiles.length > 0) {
+        const ocrTexts: string[] = [];
+        for (const imageFile of imageFiles) {
+          const ocrText = await processImageWithOCR(imageFile);
+          if (ocrText) {
+            ocrTexts.push(ocrText);
+          }
+        }
+        
+        if (ocrTexts.length > 0) {
+          finalContent = ocrTexts.join('\n\n---\n\n');
+          // Generate a PDF from the OCR text
+          const pdfDataUrl = await generatePdfFromText(finalContent, finalTitle);
+          thumbnailDataUrl = pdfDataUrl;
+        }
+      }
+      
+      // If we have PDF files, use the first one for thumbnail
+      if (pdfFiles.length > 0 && !thumbnailDataUrl) {
         try {
-          // Generate thumbnail from the first page of the PDF
-          thumbnailDataUrl = await generatePdfThumbnailFromFile(pdfFile, 1, { scale: 0.3 });
+          thumbnailDataUrl = await generatePdfThumbnailFromFile(pdfFiles[0], 1, { scale: 0.3 });
         } catch (error) {
           console.error('Failed to generate thumbnail:', error);
-          // Continue without thumbnail if generation fails
         }
       }
       
       // Simulate upload delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // In a real app, you would upload the files to a server here
-      // For now, we'll just create the PDF entry with the generated thumbnail
       const newPdf: Omit<PdfDoc, 'id'> = {
-        title: title.trim(),
-        author: 'Current User', // In real app, get from auth context
+        title: finalTitle,
+        author: 'Current User',
         updatedAt: new Date().toISOString(),
-        pages: Math.floor(Math.random() * 100) + 20, // Mock page count
-        coverUrl: thumbnailDataUrl, // Use generated thumbnail as data URL
+        pages: Math.floor(Math.random() * 100) + 20,
+        coverUrl: thumbnailDataUrl,
         tags: tags.split(',').map(tag => tag.trim()).filter(Boolean)
       };
       
@@ -93,10 +134,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
       setTitle('');
       setTags('');
       setFiles([]);
+      setOcrResults({});
+      setShowOcrResults(false);
       onClose();
       
       // Show success message
-      alert('PDF uploaded successfully! Thumbnail generated from first page.');
+      const message = imageFiles.length > 0 
+        ? `Files processed successfully! ${imageFiles.length} image(s) converted to text using OCR.`
+        : 'PDF uploaded successfully! Thumbnail generated from first page.';
+      alert(message);
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed. Please try again.');
@@ -110,6 +156,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
       setTitle('');
       setTags('');
       setFiles([]);
+      setOcrResults({});
+      setShowOcrResults(false);
       onClose();
     }
   };
@@ -218,6 +266,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
               </div>
             )}
           </div>
+
+          {showOcrResults && Object.keys(ocrResults).length > 0 && (
+            <div className="form-group">
+              <label>OCR Results</label>
+              <div className="ocr-results">
+                {Object.entries(ocrResults).map(([filename, text]) => (
+                  <div key={filename} className="ocr-result-item">
+                    <h4>{filename}</h4>
+                    <div className="ocr-text">
+                      {text.length > 200 ? `${text.substring(0, 200)}...` : text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="modal-actions">
             <button
@@ -465,6 +529,41 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
         .submit-button:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+
+        .ocr-results {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 1rem;
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        .ocr-result-item {
+          margin-bottom: 1rem;
+        }
+
+        .ocr-result-item:last-child {
+          margin-bottom: 0;
+        }
+
+        .ocr-result-item h4 {
+          margin: 0 0 0.5rem 0;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .ocr-text {
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          padding: 0.75rem;
+          font-size: 0.875rem;
+          line-height: 1.5;
+          color: #4b5563;
+          white-space: pre-wrap;
         }
 
         @media (max-width: 640px) {

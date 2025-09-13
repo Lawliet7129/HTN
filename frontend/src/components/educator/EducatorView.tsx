@@ -3,6 +3,7 @@ import { PdfDoc, mockPdfDocs } from '../../types/pdf';
 import { SearchBar } from './SearchBar';
 import { PdfCard } from './PdfCard';
 import { CreateNewCard } from './CreateNewCard';
+import { OcrCard } from './OcrCard';
 import { UploadModal } from './UploadModal';
 import { PdfSheet } from './PdfSheet';
 
@@ -65,6 +66,35 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
     setSelectedPdf(null);
   };
 
+  const handleOcrComplete = async (title: string, content: string) => {
+    // Generate actual PDF blob for storage
+    const { generatePDFFromText } = await import('../../utils/pdfGenerator');
+    const pdfBlob = generatePDFFromText(content, title, {
+      fontSize: 12,
+      lineHeight: 1.4,
+      margin: 20
+    });
+    
+    // Convert to data URL for storage
+    const pdfDataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(pdfBlob);
+    });
+    
+    const newPdf: PdfDoc = {
+      id: Date.now().toString(),
+      title,
+      author: 'Current User',
+      updatedAt: new Date().toISOString(),
+      pages: Math.ceil(content.length / 1000), // Estimate pages based on content length
+      coverUrl: pdfDataUrl, // Store the actual PDF data URL
+      tags: ['OCR', 'Handwriting', 'Text Recognition']
+    };
+    
+    setPdfs(prev => [newPdf, ...prev]);
+  };
+
   return (
     <div className="educator-view">
       <header className="educator-header">
@@ -104,6 +134,7 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
           ) : (
             <div className="pdf-grid">
               <CreateNewCard onClick={handleCreateNew} />
+              <OcrCard onOcrComplete={handleOcrComplete} />
               {filteredPdfs.map((pdf) => (
                 <PdfCard
                   key={pdf.id}
