@@ -1,66 +1,282 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { PdfDoc, mockPdfDocs } from '../../types/pdf';
+import { SearchBar } from './SearchBar';
+import { PdfCard } from './PdfCard';
+import { CreateNewCard } from './CreateNewCard';
+import { UploadModal } from './UploadModal';
+import { PdfSheet } from './PdfSheet';
 
 interface EducatorViewProps {
   onLogout: () => void;
 }
 
 export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
+  const [pdfs, setPdfs] = useState<PdfDoc[]>(mockPdfDocs);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedPdf, setSelectedPdf] = useState<PdfDoc | null>(null);
+  const [isPdfSheetOpen, setIsPdfSheetOpen] = useState(false);
+
+  // Filter PDFs based on search query
+  const filteredPdfs = useMemo(() => {
+    if (!searchQuery.trim()) return pdfs;
+    
+    const query = searchQuery.toLowerCase();
+    return pdfs.filter(pdf => 
+      pdf.title.toLowerCase().includes(query) ||
+      pdf.author?.toLowerCase().includes(query) ||
+      pdf.tags?.some(tag => tag.toLowerCase().includes(query))
+    );
+  }, [pdfs, searchQuery]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleCreateNew = () => {
+    setIsUploadModalOpen(true);
+  };
+
+  const handleUploadSubmit = (newPdf: Omit<PdfDoc, 'id'>) => {
+    const pdfWithId: PdfDoc = {
+      ...newPdf,
+      id: Date.now().toString() // Simple ID generation for demo
+    };
+    setPdfs(prev => [pdfWithId, ...prev]);
+  };
+
+  const handlePdfClick = (pdf: PdfDoc) => {
+    setSelectedPdf(pdf);
+    setIsPdfSheetOpen(true);
+  };
+
+  const handleRename = (id: string, newTitle: string) => {
+    setPdfs(prev => prev.map(pdf => 
+      pdf.id === id ? { ...pdf, title: newTitle } : pdf
+    ));
+  };
+
+  const handleDelete = (id: string) => {
+    setPdfs(prev => prev.filter(pdf => pdf.id !== id));
+  };
+
+  const handleClosePdfSheet = () => {
+    setIsPdfSheetOpen(false);
+    setSelectedPdf(null);
+  };
+
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      backgroundColor: '#f5f5f5',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '2rem',
-        backgroundColor: 'white',
-        borderRadius: '10px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        maxWidth: '500px',
-        width: '90%'
-      }}>
-        <h1 style={{ 
-          color: '#333', 
-          marginBottom: '1rem',
-          fontSize: '2rem'
-        }}>
-          Educator Dashboard
-        </h1>
-        <p style={{ 
-          color: '#666', 
-          marginBottom: '2rem',
-          fontSize: '1.1rem',
-          lineHeight: '1.6'
-        }}>
-          Welcome to the educator interface! This is a placeholder page for the educator frontend that will be implemented later.
-        </p>
-        <button 
-          onClick={onLogout}
-          style={{
-            backgroundColor: '#667eea',
-            color: 'white',
-            border: 'none',
-            padding: '0.8rem 1.5rem',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s ease'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6fd8'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#667eea'}
-        >
-          Logout
-        </button>
-      </div>
+    <div className="educator-view">
+      <header className="educator-header">
+        <div className="header-content">
+          <h1 className="header-title">PDF Library</h1>
+          <button onClick={onLogout} className="logout-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16,17 21,12 16,7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <main className="educator-main">
+        <div className="educator-container">
+          <SearchBar onSearch={handleSearch} />
+          
+          {filteredPdfs.length === 0 && searchQuery ? (
+            <div className="empty-state">
+              <div className="empty-illustration">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                  <line x1="11" y1="8" x2="11" y2="14"/>
+                  <line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+              </div>
+              <h3>No PDFs found</h3>
+              <p>Try adjusting your search terms or create a new PDF.</p>
+              <button onClick={handleCreateNew} className="create-new-button">
+                Create New PDF
+              </button>
+            </div>
+          ) : (
+            <div className="pdf-grid">
+              <CreateNewCard onClick={handleCreateNew} />
+              {filteredPdfs.map((pdf) => (
+                <PdfCard
+                  key={pdf.id}
+                  pdf={pdf}
+                  onClick={handlePdfClick}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSubmit={handleUploadSubmit}
+      />
+
+      <PdfSheet
+        pdf={selectedPdf}
+        isOpen={isPdfSheetOpen}
+        onClose={handleClosePdfSheet}
+        onRename={handleRename}
+        onDelete={handleDelete}
+      />
+      
+      <style>{`
+        .educator-view {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .educator-header {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+          padding: 1rem 0;
+        }
+
+        .header-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .header-title {
+          margin: 0;
+          font-size: 1.75rem;
+          font-weight: 700;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .logout-button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: #667eea;
+          color: white;
+          border: none;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .logout-button:hover {
+          background: #5a6fd8;
+          transform: translateY(-1px);
+        }
+
+        .educator-main {
+          padding: 2rem 0;
+          min-height: calc(100vh - 80px);
+        }
+
+        .educator-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+        }
+
+        .pdf-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 1.5rem;
+          margin-top: 1rem;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 4rem 2rem;
+          color: white;
+        }
+
+        .empty-illustration {
+          margin-bottom: 2rem;
+          opacity: 0.7;
+        }
+
+        .empty-state h3 {
+          margin: 0 0 1rem 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+        }
+
+        .empty-state p {
+          margin: 0 0 2rem 0;
+          font-size: 1.1rem;
+          opacity: 0.9;
+          line-height: 1.6;
+        }
+
+        .create-new-button {
+          background: white;
+          color: #667eea;
+          border: none;
+          padding: 1rem 2rem;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .create-new-button:hover {
+          background: #f8fafc;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+          .header-content {
+            padding: 0 1rem;
+          }
+          
+          .header-title {
+            font-size: 1.5rem;
+          }
+          
+          .educator-container {
+            padding: 0 1rem;
+          }
+          
+          .pdf-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem;
+          }
+          
+          .empty-state {
+            padding: 2rem 1rem;
+          }
+          
+          .empty-illustration svg {
+            width: 80px;
+            height: 80px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .pdf-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };
