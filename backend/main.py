@@ -8,7 +8,7 @@ from typing import Dict
 import uvicorn
 
 from .ocr import get_text_from_image
-from .cohere import beautify_text
+from .cohere import beautify_text, get_text_from_image_cohere
 
 app = FastAPI(title="OCR + Beautify API")
 
@@ -48,7 +48,7 @@ async def convert_image(file: UploadFile = File(...)) -> Dict[str, str]:
     try:
         contents = await file.read()
         logger.info("File was read successfully.")
-        raw_text = get_text_from_image(contents) # Use LLM to extract raw text from image
+        raw_text = get_text_from_image_cohere(contents) # Use Cohere model to extract raw text from image
         logger.info(f"Successfully received raw OCR text: {raw_text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OCR failed: {str(e)}")
