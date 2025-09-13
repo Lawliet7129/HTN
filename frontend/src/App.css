@@ -1,0 +1,151 @@
+.App {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: white;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.loading-screen p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.info-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  pointer-events: auto;
+  backdrop-filter: blur(10px);
+}
+
+.info-panel h1 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.info-panel p {
+  margin: 0 0 15px 0;
+  color: #666;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.controls-info h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.controls-info ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #666;
+  font-size: 0.85em;
+}
+
+.controls-info li {
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+
+.reset-camera-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.reset-camera-btn:hover {
+  background: #5a6fd8;
+}
+
+/* Console message styling for better visibility */
+.console-message {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .info-panel {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    max-width: none;
+    padding: 15px;
+  }
+  
+  .info-panel h1 {
+    font-size: 1.3em;
+  }
+  
+  .info-panel p {
+    font-size: 0.85em;
+  }
+  
+  .controls-info {
+    display: none; /* Hide controls on mobile for cleaner UI */
+  }
+}

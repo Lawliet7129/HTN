@@ -7,17 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
 import uvicorn
 
-
 from .ocr import get_text_from_image
 from .cohere import beautify_text
 
 app = FastAPI(title="OCR + Beautify API")
 
 
-# Allow the Three.js frontend on localhost:3000
+# Allow the Three.js frontend on localhost:3000 and Vite dev server
 origins = [
 "http://localhost:3000",
 "http://127.0.0.1:3000",
+"http://localhost:5173",  # Vite dev server
+"http://127.0.0.1:5173",
 ]
 
 
