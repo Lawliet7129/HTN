@@ -45,7 +45,7 @@ async def convert_image(file: UploadFile = File(...)) -> Dict[str, str]:
     try:
         contents = await file.read()
         logger.info("File was read successfully.")
-        raw_text = get_text_from_image(contents)
+        raw_text = get_text_from_image(contents) # Use LLM to extract raw text from image
         logger.info(f"Successfully received raw OCR text: {raw_text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OCR failed: {str(e)}")
