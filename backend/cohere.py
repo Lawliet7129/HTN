@@ -2,6 +2,7 @@
 
 import cohere
 import os
+import base64
 
 from dotenv import load_dotenv
 from backend.constants.assignment_latex_template import ASSIGNMENT_LATEX_TEMPLATE
@@ -48,3 +49,45 @@ def beautify_text(raw_text: str) -> str:
     output = temp.replace("```latex", "").replace("```", "").strip()
     output = output.replace("\\n", "\n")
     return output
+
+
+def get_text_from_image_cohere(image_bytes: bytes) -> str:
+    """Run OCR on an image and return extracted text using Cohere's multimodal model"""
+    load_dotenv()
+    api_key = os.getenv('COHERE_API_KEY')
+
+    if not api_key:
+        raise Exception("COHERE_API_KEY environment variable not set")
+
+    co = cohere.ClientV2(api_key)
+
+    try:
+        # Convert image to base64 for Cohere input
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_data_uri = f"data:image/png;base64,{image_b64}"
+
+        response = co.chat(
+            model="command-a-vision-07-2025",   # multimodal OCR-capable model
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Extract all text from this image."},
+                        {"type": "image", "image": image_data_uri},
+                    ],
+                }
+            ],
+        )
+
+        # Cohere returns structured messages; grab the text
+        if response.message and response.message.content:
+            for c in response.message.content:
+                if getattr(c, "type", None) == "text":
+                    return getattr(c, "text", "").strip()
+
+        raise Exception("Cohere OCR returned empty text.")
+
+    except Exception as e:
+        raise Exception(f"Cohere OCR failed: {e}")
+
+
