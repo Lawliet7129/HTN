@@ -127,21 +127,42 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
         console.log(`✅ Marked ${child.name} as interactive bulletin board`);
       }
       
-      // Mark ALL polySurface objects as potential bookshelves (let's be more inclusive)
+      // Mark bookshelf structures as interactive
       if (name.includes('polysurface')) {
-        interactiveObjects.bookshelves.push(child);
-        child.userData.isInteractive = true;
-        child.userData.interactionType = 'bookshelf';
-        child.userData.description = 'AI-powered material creation and storage';
-        console.log(`✅ Marked ${child.name} as interactive bookshelf (${child.children.length} children)`);
+        // Check if this is a main bookshelf structure (has many children or is a known bookshelf)
+        const isMainBookshelf = child.children.length > 2 || 
+                               name.includes('polySurface104') || 
+                               name.includes('polySurface111') ||
+                               name.includes('polySurface114') ||
+                               name.includes('polySurface46');
         
-        // Also mark all children as bookshelf parts
-        child.traverse((grandChild) => {
-          if (grandChild !== child) {
-            grandChild.userData.isInteractive = true;
-            grandChild.userData.interactionType = 'bookshelf';
-            grandChild.userData.description = 'AI-powered material creation and storage';
-            grandChild.userData.parentBookshelf = child.name;
+        if (isMainBookshelf) {
+          interactiveObjects.bookshelves.push(child);
+          child.userData.isInteractive = true;
+          child.userData.interactionType = 'bookshelf';
+          child.userData.description = 'AI-powered material creation and storage';
+          console.log(`✅ Marked ${child.name} as interactive bookshelf (${child.children.length} children)`);
+        } else {
+          // Mark smaller polySurface objects as individual books
+          child.userData.isInteractive = true;
+          child.userData.interactionType = 'book';
+          child.userData.description = 'Individual book - click to view material';
+          console.log(`📖 Marked ${child.name} as individual book (${child.children.length} children)`);
+        }
+      }
+    });
+    
+    // Second pass: Mark all descendants of bookshelves
+    model.traverse((child) => {
+      if (child.userData.interactionType === 'bookshelf') {
+        // Mark all descendants as bookshelf parts
+        child.traverse((descendant) => {
+          if (descendant !== child) {
+            descendant.userData.isInteractive = true;
+            descendant.userData.interactionType = 'book';
+            descendant.userData.description = 'Individual book - click to view material';
+            descendant.userData.parentBookshelf = child.name;
+            console.log(`📖 Marked ${descendant.name} as book with parent: ${child.name}`);
           }
         });
       }
@@ -170,12 +191,43 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
     const object = event.object;
     
     console.log(`🖱️ Clicked on: ${object.name}`, object.userData);
+    console.log(`🔍 Object has parentBookshelf: ${object.userData.parentBookshelf || 'NO'}`);
     
-    if (object.userData.isInteractive) {
-      console.log(`✅ Interactive object clicked: ${object.userData.interactionType}`);
+    // Check if this object or its parent is interactive
+    let interactiveObject = object;
+    let interactionType = object.userData.interactionType;
+    
+    // If clicked object is a book but has a parent bookshelf, treat it as bookshelf click
+    if (object.userData.interactionType === 'book' && object.userData.parentBookshelf) {
+      console.log(`🔍 Book has parentBookshelf: ${object.userData.parentBookshelf}`);
+      // Find the parent bookshelf object
+      const parent = object.parent;
+      console.log(`🔍 Parent object: ${parent?.name}, interactionType: ${parent?.userData?.interactionType}`);
+      
+      if (parent && parent.userData.interactionType === 'bookshelf') {
+        interactiveObject = parent;
+        interactionType = 'bookshelf';
+        console.log(`📚 Book clicked, but treating as bookshelf click (parent: ${parent.name})`);
+      } else {
+        // Try to find the bookshelf parent by traversing up the hierarchy
+        let currentParent = parent;
+        while (currentParent && currentParent.parent) {
+          currentParent = currentParent.parent;
+          if (currentParent.userData.interactionType === 'bookshelf') {
+            interactiveObject = currentParent;
+            interactionType = 'bookshelf';
+            console.log(`📚 Found bookshelf parent by traversing: ${currentParent.name}`);
+            break;
+          }
+        }
+      }
+    }
+    
+    if (interactiveObject.userData.isInteractive) {
+      console.log(`✅ Interactive object clicked: ${interactionType}`);
       
       // Handle different interaction types
-      switch (object.userData.interactionType) {
+      switch (interactionType) {
         case 'desk':
           console.log('🖥️ Desk clicked - opening scheduling interface...');
           // TODO: Open scheduling modal/interface
@@ -187,12 +239,17 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
             onBookshelfClick();
           }
           break;
+        case 'book':
+          console.log('📖 Individual book clicked - opening book interface...');
+          // TODO: Open individual book/material interface
+          // Don't trigger camera animation for individual books
+          break;
         case 'bulletin':
           console.log('📋 Bulletin board clicked - opening Q&A interface...');
           // TODO: Open bulletin board interface
           break;
         default:
-          console.log('❓ Unknown interaction type:', object.userData.interactionType);
+          console.log('❓ Unknown interaction type:', interactionType);
           break;
       }
       

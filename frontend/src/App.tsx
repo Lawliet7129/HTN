@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth, UserType } from './contexts/AuthContext';
 import { LandingPage } from './components/landing/LandingPage';
 import { AuthPage } from './components/auth/AuthPage';
 import { ClassroomView } from './components/classroom/ClassroomView';
+import { EducatorView } from './components/educator/EducatorView';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Classroom } from './components/classroom/Classroom';
@@ -64,8 +65,12 @@ function BackgroundScene() {
 
 // Main App Content
 function AppContent() {
-  const { isAuthenticated, login, signup, logout, isLoading } = useAuth();
+  const { isAuthenticated, login, signup, logout, isLoading, user } = useAuth();
   const [showLanding, setShowLanding] = useState(true);
+
+  // Debug user data
+  console.log('App - user:', user);
+  console.log('App - userType:', user?.userType);
 
   const handleGetStarted = () => {
     setShowLanding(false);
@@ -75,8 +80,8 @@ function AppContent() {
     await login(email, password);
   };
 
-  const handleSignup = async (email: string, password: string, name: string) => {
-    await signup(email, password, name);
+  const handleSignup = async (email: string, password: string, name: string, userType: UserType) => {
+    await signup(email, password, name, userType);
   };
 
   const handleLogout = () => {
@@ -111,17 +116,25 @@ function AppContent() {
         <Route 
           path="/auth" 
           element={
-            <AuthPage 
-              onLogin={handleLogin}
-              onSignup={handleSignup}
-            />
+            isAuthenticated ? (
+              <Navigate to="/classroom" replace />
+            ) : (
+              <AuthPage 
+                onLogin={handleLogin}
+                onSignup={handleSignup}
+              />
+            )
           } 
         />
         <Route 
           path="/classroom" 
           element={
             isAuthenticated ? (
-              <ClassroomView onLogout={handleLogout} />
+              user?.userType === 'educator' ? (
+                <EducatorView onLogout={handleLogout} />
+              ) : (
+                <ClassroomView onLogout={handleLogout} />
+              )
             ) : (
               <Navigate to="/auth" replace />
             )
@@ -130,9 +143,11 @@ function AppContent() {
         <Route 
           path="/" 
           element={
-            isAuthenticated && !showLanding ? (
+            isAuthenticated ? (
               <Navigate to="/classroom" replace />
-            ) : null
+            ) : showLanding ? null : (
+              <Navigate to="/auth" replace />
+            )
           } 
         />
       </Routes>

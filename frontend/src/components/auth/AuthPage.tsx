@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { UserType } from '../../contexts/AuthContext';
 import './AuthPage.css';
 
 interface AuthPageProps {
   onLogin: (email: string, password: string) => void;
-  onSignup: (email: string, password: string, name: string) => void;
+  onSignup: (email: string, password: string, name: string, userType: UserType) => void;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
-  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    userType: 'student' as UserType
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -50,11 +50,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
         if (formData.password.length < 6) {
           throw new Error('Password must be at least 6 characters');
         }
-        await onSignup(formData.email, formData.password, formData.name);
+        await onSignup(formData.email, formData.password, formData.name, formData.userType);
       }
       
-      // Navigate to classroom on success
-      navigate('/classroom');
+      // Navigation will be handled by the routing logic in App.tsx
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -64,7 +63,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', password: '', confirmPassword: '', userType: 'student' });
     setError('');
   };
 
@@ -97,6 +96,23 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
                 placeholder="Enter your full name"
                 required={!isLogin}
               />
+            </div>
+          )}
+
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="userType">I am a...</label>
+              <select
+                id="userType"
+                name="userType"
+                value={formData.userType}
+                onChange={handleInputChange}
+                required={!isLogin}
+                className="user-type-select"
+              >
+                <option value="student">Student</option>
+                <option value="educator">Educator</option>
+              </select>
             </div>
           )}
 
