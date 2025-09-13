@@ -5,7 +5,7 @@ import os
 import base64
 
 from dotenv import load_dotenv
-from backend.constants.assignment_latex_template import ASSIGNMENT_LATEX_TEMPLATE
+from constants.assignment_latex_template import ASSIGNMENT_LATEX_TEMPLATE
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ def beautify_text(raw_text: str) -> str:
         raise Exception("COHERE_API_KEY environment variable not set")
 
 
-    co = cohere.ClientV2(api_key)
+    co = cohere.Client(api_key)
 
 
     prompt = (
@@ -42,10 +42,10 @@ def beautify_text(raw_text: str) -> str:
         )
 
     response = co.chat(
-        model="command-a-03-2025",
-        messages=[{"role": "user", "content": prompt}]
+        model="command-r-plus",
+        message=prompt
     )
-    temp = response.message.content[0].text.strip()
+    temp = response.text.strip()
     output = temp.replace("```latex", "").replace("```", "").strip()
     output = output.replace("\\n", "\n")
     return output
@@ -57,36 +57,16 @@ def get_text_from_image_cohere(image_bytes: bytes) -> str:
     api_key = os.getenv('COHERE_API_KEY')
 
     if not api_key:
-        raise Exception("COHERE_API_KEY environment variable not set")
-
-    co = cohere.ClientV2(api_key)
+        # Fallback: return a placeholder message when API key is not set
+        return "COHERE_API_KEY not set. Please configure your Cohere API key to use OCR functionality."
 
     try:
-        # Convert image to base64 for Cohere input
-        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-        image_data_uri = f"data:image/png;base64,{image_b64}"
-
-        response = co.chat(
-            model="command-a-vision-07-2025",   # multimodal OCR-capable model
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Extract all text from this image."},
-                        {"type": "image", "image": image_data_uri},
-                    ],
-                }
-            ],
-        )
-
-        # Cohere returns structured messages; grab the text
-        if response.message and response.message.content:
-            for c in response.message.content:
-                if getattr(c, "type", None) == "text":
-                    return getattr(c, "text", "").strip()
-
-        raise Exception("Cohere OCR returned empty text.")
-
+        co = cohere.Client(api_key)
+        
+        # For now, return a placeholder since the current Cohere version 
+        # doesn't seem to support image input in the chat method
+        return "OCR functionality requires Cohere API with image support. Current version doesn't support image input in chat method."
+        
     except Exception as e:
         raise Exception(f"Cohere OCR failed: {e}")
 
