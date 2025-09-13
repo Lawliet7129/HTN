@@ -3,6 +3,10 @@
 import cohere
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 def beautify_text(raw_text: str) -> str:
     """
     Send raw OCR text to Cohere and a beautified version
@@ -23,7 +27,8 @@ def beautify_text(raw_text: str) -> str:
 
     prompt = (
         "You are a helpful text formatting assistant.\n"
-        "Take the raw OCR output below and return a clean, well-formatted version."
+        "Take the raw OCR output below and return a clean, well-formatted version. Process that well formatted"
+        "version into a latex code that generates a beautifl y formatted document. \n"
         "Do NOT add explanations — return only cleaned text. Preserve meaning.\n\n"
         "INPUT:\n" + raw_text + "\n\nOUTPUT:\n"
         )
@@ -31,8 +36,8 @@ def beautify_text(raw_text: str) -> str:
 
     response = co.chat(
         model="command-a-03-2025", 
-        messages=[{"role": "user", "content": "hello world!"}]
+        messages=[{"role": "user", "content": prompt}]
     )
 
 
-    return response
+    return response.message.content[0].text.strip()
