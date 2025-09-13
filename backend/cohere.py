@@ -15,24 +15,26 @@ def beautify_text(raw_text: str) -> str:
     api_key = os.getenv('COHERE_API_KEY')
 
     if not api_key:
-        raise Exception("COHERE_API_KEY environment variable not set")
+        # If no API key, return the raw text with basic cleaning
+        print("Warning: COHERE_API_KEY not set, returning raw OCR text")
+        return raw_text.strip()
 
+    try:
+        co = cohere.ClientV2(api_key)
 
-    co = cohere.ClientV2(api_key)
-
-
-    prompt = (
-        "You are a helpful text formatting assistant.\n"
-        "Take the raw OCR output below and return a clean, well-formatted version."
-        "Do NOT add explanations — return only cleaned text. Preserve meaning.\n\n"
-        "INPUT:\n" + raw_text + "\n\nOUTPUT:\n"
+        prompt = (
+            "You are a helpful text formatting assistant.\n"
+            "Take the raw OCR output below and return a clean, well-formatted version."
+            "Do NOT add explanations — return only cleaned text. Preserve meaning.\n\n"
+            "INPUT:\n" + raw_text + "\n\nOUTPUT:\n"
         )
 
+        response = co.chat(
+            model="command-a-03-2025", 
+            messages=[{"role": "user", "content": prompt}]
+        )
 
-    response = co.chat(
-        model="command-a-03-2025", 
-        messages=[{"role": "user", "content": "hello world!"}]
-    )
-
-
-    return response
+        return response.text
+    except Exception as e:
+        print(f"Cohere API error: {e}, returning raw OCR text")
+        return raw_text.strip()

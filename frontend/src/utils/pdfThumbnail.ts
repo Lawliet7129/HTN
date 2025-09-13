@@ -1,7 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Don't set workerSrc - let PDF.js handle it automatically
-// This avoids the "Invalid workerSrc type" error
+// Set up PDF.js worker - use a simple approach
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
 export interface ThumbnailOptions {
   width?: number;
@@ -41,7 +41,8 @@ export const generatePdfThumbnail = async (
     // Render the page to canvas
     const renderContext = {
       canvasContext: context,
-      viewport: viewport
+      viewport: viewport,
+      canvas: canvas
     };
     
     await page.render(renderContext).promise;
@@ -90,7 +91,8 @@ export const generatePdfThumbnailFromFile = async (
     // Render the page to canvas
     const renderContext = {
       canvasContext: context,
-      viewport: viewport
+      viewport: viewport,
+      canvas: canvas
     };
     
     await page.render(renderContext).promise;
