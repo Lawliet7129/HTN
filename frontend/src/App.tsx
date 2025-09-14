@@ -5,6 +5,7 @@ import { LandingPage } from './components/landing/LandingPage';
 import { AuthPage } from './components/auth/AuthPage';
 import { ClassroomView } from './components/classroom/ClassroomView';
 import { EducatorView } from './components/educator/EducatorView';
+import { LatexTest } from './components/LatexTest';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Classroom } from './components/classroom/Classroom';
@@ -140,6 +141,7 @@ function AppContent() {
             )
           } 
         />
+        <Route path="/latex-test" element={<LatexTest />} />
         <Route 
           path="/" 
           element={

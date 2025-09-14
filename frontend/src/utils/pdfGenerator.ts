@@ -209,6 +209,166 @@ export const downloadPDF = (pdfBlob: Blob, filename: string) => {
   URL.revokeObjectURL(url);
 };
 
+// Enhanced PDF generator that can handle both text and math images using KaTeX
+export const generatePDFWithMath = async (
+  content: Array<{ type: 'text' | 'math' | 'display-math'; content: string }>,
+  title: string = 'OCR Document',
+  options: PDFGenerationOptions = {}
+): Promise<Blob> => {
+  const {
+    fontSize = 12,
+    lineHeight = 1.4,
+    margin = 20,
+    author = 'OCR System',
+    subject = 'OCR Generated Document',
+    keywords = 'OCR, Text Recognition, Document'
+  } = options;
+
+  // Import LaTeX renderer dynamically to avoid circular dependencies
+  const { renderLatexToImage, renderDisplayLatexToImage } = await import('./latexRenderer');
+
+  // Create new PDF document
+  const doc = new jsPDF();
+  
+  // Set document metadata
+  doc.setProperties({
+    title,
+    author,
+    subject,
+    keywords
+  });
+
+  // Set font
+  doc.setFont('helvetica');
+  doc.setFontSize(fontSize);
+
+  // Add title
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, margin, margin + 10);
+  
+  // Add separator line
+  doc.setLineWidth(0.5);
+  doc.line(margin, margin + 15, doc.internal.pageSize.width - margin, margin + 15);
+  
+  // Reset font for content
+  doc.setFontSize(fontSize);
+  doc.setFont('helvetica', 'normal');
+
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const maxWidth = pageWidth - (margin * 2);
+  const maxHeight = pageHeight - (margin * 2) - 20;
+
+  let currentY = margin + 25;
+  let isFirstPage = true;
+
+  for (const item of content) {
+    try {
+      if (item.type === 'text') {
+        // Handle regular text
+        const words = item.content.split(/\s+/);
+        let currentLine = '';
+
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i];
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const textWidth = doc.getTextWidth(testLine);
+
+          if (textWidth > maxWidth && currentLine) {
+            // Add current line to page
+            doc.text(currentLine, margin, currentY);
+            currentY += fontSize * lineHeight;
+            currentLine = word;
+
+            // Check if we need a new page
+            if (currentY > maxHeight) {
+              doc.addPage();
+              currentY = margin;
+              isFirstPage = false;
+            }
+          } else {
+            currentLine = testLine;
+          }
+        }
+
+        // Add remaining text
+        if (currentLine) {
+          doc.text(currentLine, margin, currentY);
+          currentY += fontSize * lineHeight;
+        }
+
+      } else if (item.type === 'math' || item.type === 'display-math') {
+        // Handle math expressions using KaTeX
+        console.log(`🎨 Rendering ${item.type}: ${item.content}`);
+        
+        try {
+          const imageDataUrl = item.type === 'display-math' 
+            ? await renderDisplayLatexToImage(item.content)
+            : await renderLatexToImage(item.content);
+          
+          // Add some spacing before math
+          if (item.type === 'display-math') {
+            currentY += 10;
+          }
+          
+          // Load image and calculate dimensions
+          const img = new Image();
+          img.src = imageDataUrl;
+          
+          await new Promise((resolve) => {
+            img.onload = resolve;
+          });
+          
+          // Calculate image dimensions to fit page width
+          const imgWidth = Math.min(img.width, maxWidth);
+          const imgHeight = (img.height * imgWidth) / img.width;
+          
+          // Check if we need a new page for the image
+          if (currentY + imgHeight > maxHeight) {
+            doc.addPage();
+            currentY = margin;
+            isFirstPage = false;
+          }
+          
+          // Add image to PDF
+          doc.addImage(imageDataUrl, 'PNG', margin, currentY, imgWidth, imgHeight);
+          
+          // Update Y position
+          currentY += imgHeight + (item.type === 'display-math' ? 15 : 5);
+          
+        } catch (error) {
+          console.error(`Failed to render math: ${item.content}`, error);
+          // Fallback to text representation
+          const fallbackText = `[Math: ${item.content}]`;
+          doc.text(fallbackText, margin, currentY);
+          currentY += fontSize * lineHeight;
+        }
+      }
+    } catch (error) {
+      console.error(`Error processing content item:`, error);
+      // Fallback to text
+      doc.text(item.content, margin, currentY);
+      currentY += fontSize * lineHeight;
+    }
+  }
+
+  // Add page numbers
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text(
+      `Page ${i} of ${pageCount}`,
+      pageWidth - margin - 30,
+      pageHeight - 10
+    );
+  }
+
+  // Return as Blob
+  return doc.output('blob');
+};
+
 export const createPDFDataURL = (pdfBlob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

@@ -15,7 +15,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
   const [files, setFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [ocrResults, setOcrResults] = useState<{[key: string]: string}>({});
+  const [ocrResults, setOcrResults] = useState<{[key: string]: {raw: string, beautified: string}}>({});
   const [showOcrResults, setShowOcrResults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,11 +55,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
     try {
       const result = await convertImageToText(file);
       if (result.success && result.data) {
+        // Store both raw and beautified text for debugging
         setOcrResults(prev => ({
           ...prev,
-          [file.name]: result.data!.beautified_text || result.data!.raw_text
+          [file.name]: {
+            raw: result.data!.raw_text || '',
+            beautified: result.data!.beautified_text || ''
+          }
         }));
         setShowOcrResults(true);
+        
+        // Debug: Log what we got from backend
+        console.log('🔍 Raw OCR text:', result.data!.raw_text);
+        console.log('🔍 Beautified LaTeX:', result.data!.beautified_text);
+        
         return result.data.beautified_text || result.data.raw_text;
       } else {
         console.error('OCR failed:', result.error);
@@ -269,13 +278,24 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onSub
 
           {showOcrResults && Object.keys(ocrResults).length > 0 && (
             <div className="form-group">
-              <label>OCR Results</label>
+              <label>OCR Results (Debug View)</label>
               <div className="ocr-results">
-                {Object.entries(ocrResults).map(([filename, text]) => (
+                {Object.entries(ocrResults).map(([filename, data]) => (
                   <div key={filename} className="ocr-result-item">
                     <h4>{filename}</h4>
-                    <div className="ocr-text">
-                      {text.length > 200 ? `${text.substring(0, 200)}...` : text}
+                    
+                    <div style={{marginBottom: '10px'}}>
+                      <strong>Raw OCR Text:</strong>
+                      <div className="ocr-text" style={{background: '#f0f0f0', padding: '10px', margin: '5px 0', borderRadius: '4px'}}>
+                        {data.raw.length > 300 ? `${data.raw.substring(0, 300)}...` : data.raw}
+                      </div>
+                    </div>
+                    
+                    <div style={{marginBottom: '10px'}}>
+                      <strong>Beautified LaTeX:</strong>
+                      <div className="ocr-text" style={{background: '#e8f4f8', padding: '10px', margin: '5px 0', borderRadius: '4px', fontFamily: 'monospace', fontSize: '12px'}}>
+                        {data.beautified.length > 500 ? `${data.beautified.substring(0, 500)}...` : data.beautified}
+                      </div>
                     </div>
                   </div>
                 ))}
