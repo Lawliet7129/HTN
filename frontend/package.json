@@ -1,0 +1,32 @@
+{
+  "name": "classroom-frontend",
+  "version": "1.0.0",
+  "description": "3D Virtual Classroom Frontend",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "vite --host"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.88.13",
+    "@react-three/fiber": "^8.15.11",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/three": "^0.158.3",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.2",
+    "pdfjs-dist": "^5.4.149",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.9.1",
+    "three": "^0.158.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
+  }
+}

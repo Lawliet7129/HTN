@@ -1,0 +1,51 @@
+{
+  "name": "3d-virtual-classroom",
+  "version": "1.0.0",
+  "description": "A Three.js-based 3D classroom with AI-powered LaTeX conversion",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:ai-services\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:ai-services": "concurrently \"npm run dev:handwriting\" \"npm run dev:latex\" \"npm run dev:integrations\"",
+    "dev:handwriting": "cd apis/handwriting-recognition && python app.py",
+    "dev:latex": "cd apis/latex-conversion && python app.py",
+    "dev:integrations": "cd apis/external-integrations && python app.py",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "setup": "./scripts/setup/install-dependencies.sh",
+    "start": "npm run start:backend && npm run start:frontend",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm start",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:reset": "cd backend && npm run db:reset"
+  },
+  "keywords": [
+    "threejs",
+    "3d",
+    "classroom",
+    "education",
+    "latex",
+    "ai",
+    "handwriting-recognition"
+  ],
+  "author": "HTN Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "apis/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
