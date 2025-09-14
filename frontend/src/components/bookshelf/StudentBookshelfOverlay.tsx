@@ -350,9 +350,16 @@ export const StudentBookshelfOverlay: React.FC<StudentBookshelfOverlayProps> = (
           padding: 2rem;
           overflow-y: auto;
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 1.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 1rem;
           align-content: start;
+          max-height: calc(90vh - 300px);
+        }
+
+        .pdf-grid .pdf-card {
+          height: 200px !important;
+          max-height: 200px !important;
+          aspect-ratio: 3/4 !important;
         }
 
         .no-results {
@@ -398,8 +405,14 @@ export const StudentBookshelfOverlay: React.FC<StudentBookshelfOverlayProps> = (
 
           .pdf-grid {
             padding: 1rem;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.75rem;
+            max-height: calc(90vh - 250px);
+          }
+
+          .pdf-grid .pdf-card {
+            height: 180px !important;
+            max-height: 180px !important;
           }
 
           .filter-tags {
@@ -414,7 +427,13 @@ export const StudentBookshelfOverlay: React.FC<StudentBookshelfOverlayProps> = (
 
         @media (max-width: 480px) {
           .pdf-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.5rem;
+          }
+
+          .pdf-grid .pdf-card {
+            height: 160px !important;
+            max-height: 160px !important;
           }
 
           .bookshelf-header {
