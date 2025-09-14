@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Classroom } from './Classroom';
 import { Human } from './Human';
 import { StudentBookshelfOverlay } from '../bookshelf/StudentBookshelfOverlay';
+import { NewMaterialNotification } from '../notification/NewMaterialNotification';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import './ClassroomView.css';
 
 
@@ -15,7 +17,10 @@ interface ClassroomViewProps {
 
 export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout, onSwitchToEducatorView }) => {
   const [isBookshelfOverlayOpen, setIsBookshelfOverlayOpen] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [currentNotification, setCurrentNotification] = useState<{ title: string; id: string } | null>(null);
   const { user } = useAuth();
+  const { notifications, markAsRead, hasUnreadNotifications } = useNotifications();
 
   const handleModelLoaded = () => {
     // Model loaded successfully
@@ -30,6 +35,40 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout, onSwitch
 
   const handleCloseBookshelfOverlay = () => {
     setIsBookshelfOverlayOpen(false);
+  };
+
+  // Handle notifications
+  useEffect(() => {
+    if (notifications.length > 0 && hasUnreadNotifications) {
+      const latestUnreadNotification = notifications.find(n => !n.isRead);
+      if (latestUnreadNotification) {
+        setCurrentNotification({
+          title: latestUnreadNotification.title,
+          id: latestUnreadNotification.id
+        });
+        setShowNotification(true);
+        
+        // Auto-hide notification after 5 seconds
+        const timer = setTimeout(() => {
+          setShowNotification(false);
+          markAsRead(latestUnreadNotification.id);
+        }, 5000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [notifications, hasUnreadNotifications, markAsRead]);
+
+  const handleNotificationClose = () => {
+    setShowNotification(false);
+    if (currentNotification) {
+      markAsRead(currentNotification.id);
+    }
+  };
+
+  const handleViewMaterial = () => {
+    handleNotificationClose();
+    setIsBookshelfOverlayOpen(true);
   };
 
 
@@ -121,6 +160,16 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout, onSwitch
         isOpen={isBookshelfOverlayOpen}
         onClose={handleCloseBookshelfOverlay}
       />
+
+      {/* New Material Notification */}
+      {currentNotification && (
+        <NewMaterialNotification
+          isVisible={showNotification}
+          materialTitle={currentNotification.title}
+          onClose={handleNotificationClose}
+          onViewMaterial={handleViewMaterial}
+        />
+      )}
     </div>
   );
 };

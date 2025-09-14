@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth, UserType } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { PdfProvider } from './contexts/PdfContext';
 import { LandingPage } from './components/landing/LandingPage';
 import { AuthPage } from './components/auth/AuthPage';
 import { ClassroomView } from './components/classroom/ClassroomView';
@@ -171,9 +173,13 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <PdfProvider>
+        <NotificationProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </NotificationProvider>
+      </PdfProvider>
     </AuthProvider>
   );
 }

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { PdfDoc, mockPdfDocs } from '../../types/pdf';
+import React, { useState } from 'react';
+import { PdfDoc } from '../../types/pdf';
 import { PdfCard } from '../educator/PdfCard';
 import { PdfViewer } from '../educator/PdfViewer';
+import { usePdfs } from '../../contexts/PdfContext';
 
 interface StudentBookshelfOverlayProps {
   isOpen: boolean;
@@ -12,17 +13,10 @@ export const StudentBookshelfOverlay: React.FC<StudentBookshelfOverlayProps> = (
   isOpen, 
   onClose 
 }) => {
-  const [pdfs, setPdfs] = useState<PdfDoc[]>([]);
   const [selectedPdf, setSelectedPdf] = useState<PdfDoc | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Load available PDFs (in a real app, this would be an API call)
-      setPdfs(mockPdfDocs);
-    }
-  }, [isOpen]);
+  const { pdfs } = usePdfs();
 
   const handlePdfClick = (pdf: PdfDoc) => {
     if (!pdf.coverUrl) {

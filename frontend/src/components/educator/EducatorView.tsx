@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { PdfDoc, mockPdfDocs } from '../../types/pdf';
+import { PdfDoc } from '../../types/pdf';
 import { SearchBar } from './SearchBar';
 import { PdfCard } from './PdfCard';
 import { CreateNewCard } from './CreateNewCard';
 import { UploadModal } from './UploadModal';
 import { PdfSheet } from './PdfSheet';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { usePdfs } from '../../contexts/PdfContext';
 
 interface EducatorViewProps {
   onLogout: () => void;
@@ -12,11 +14,12 @@ interface EducatorViewProps {
 }
 
 export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout, onSwitchToStudentView }) => {
-  const [pdfs, setPdfs] = useState<PdfDoc[]>(mockPdfDocs);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedPdf, setSelectedPdf] = useState<PdfDoc | null>(null);
   const [isPdfSheetOpen, setIsPdfSheetOpen] = useState(false);
+  const { addNotification } = useNotifications();
+  const { pdfs, addPdf, updatePdf, deletePdf } = usePdfs();
 
   // Filter PDFs based on search query
   const filteredPdfs = useMemo(() => {
@@ -39,11 +42,10 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout, onSwitchTo
   };
 
   const handleUploadSubmit = (newPdf: Omit<PdfDoc, 'id'>) => {
-    const pdfWithId: PdfDoc = {
-      ...newPdf,
-      id: Date.now().toString() // Simple ID generation for demo
-    };
-    setPdfs(prev => [pdfWithId, ...prev]);
+    addPdf(newPdf);
+    
+    // Add notification for new material upload
+    addNotification(newPdf.title);
   };
 
   const handlePdfClick = (pdf: PdfDoc) => {
@@ -52,13 +54,11 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout, onSwitchTo
   };
 
   const handleRename = (id: string, newTitle: string) => {
-    setPdfs(prev => prev.map(pdf => 
-      pdf.id === id ? { ...pdf, title: newTitle } : pdf
-    ));
+    updatePdf(id, { title: newTitle });
   };
 
   const handleDelete = (id: string) => {
-    setPdfs(prev => prev.filter(pdf => pdf.id !== id));
+    deletePdf(id);
   };
 
   const handleClosePdfSheet = () => {
