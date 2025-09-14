@@ -1,8 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Classroom } from './Classroom';
+import { StudentBookshelfOverlay } from '../bookshelf/StudentBookshelfOverlay';
 import { Vector3 } from 'three';
+import { useAuth } from '../../contexts/AuthContext';
 import './ClassroomView.css';
 
 // Camera controller component
@@ -13,7 +15,6 @@ function CameraController({ targetPosition, targetLookAt }: { targetPosition: Ve
     if (targetPosition && targetLookAt) {
       // Animate camera to new position
       const startPosition = camera.position.clone();
-      const startLookAt = new Vector3(0, 0, 0); // Default look at
       
       const duration = 2000; // 2 seconds
       const startTime = Date.now();
@@ -52,19 +53,26 @@ interface ClassroomViewProps {
 export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout }) => {
   const [cameraTarget, setCameraTarget] = useState<{ position: Vector3, lookAt: Vector3 } | null>(null);
   const [isBookshelfView, setIsBookshelfView] = useState(false);
+  const [isBookshelfOverlayOpen, setIsBookshelfOverlayOpen] = useState(false);
+  const { user } = useAuth();
 
-  const handleModelLoaded = (model: any) => {
+  const handleModelLoaded = () => {
     // Model loaded successfully
   };
 
   const handleBookshelfClick = () => {
-    // Bookshelf position based on your model structure (polySurface104 is likely the main bookshelf)
-    // Adjust these coordinates based on your actual bookshelf position
-    const bookshelfPosition = new Vector3(90, 80, 90); // Position in front of bookshelf
-    const bookshelfLookAt = new Vector3(0, 0, 120); // Look at the bookshelf center
-    
-    setCameraTarget({ position: bookshelfPosition, lookAt: bookshelfLookAt });
-    setIsBookshelfView(true);
+    // Check if user is a student
+    if (user?.userType === 'student') {
+      // For students: Show the bookshelf overlay
+      setIsBookshelfOverlayOpen(true);
+    } else {
+      // For educators: Show camera animation (existing behavior)
+      const bookshelfPosition = new Vector3(90, 80, 90); // Position in front of bookshelf
+      const bookshelfLookAt = new Vector3(0, 0, 120); // Look at the bookshelf center
+      
+      setCameraTarget({ position: bookshelfPosition, lookAt: bookshelfLookAt });
+      setIsBookshelfView(true);
+    }
   };
 
   const resetCamera = () => {
@@ -73,6 +81,10 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout }) => {
     
     setCameraTarget({ position: defaultPosition, lookAt: defaultLookAt });
     setIsBookshelfView(false);
+  };
+
+  const handleCloseBookshelfOverlay = () => {
+    setIsBookshelfOverlayOpen(false);
   };
 
   return (
@@ -134,7 +146,11 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout }) => {
       <div className="classroom-ui">
         <div className="info-panel">
           <h2>Interactive Classroom</h2>
-          <p>Click on the bookshelf to focus the camera and see book animations!</p>
+          {user?.userType === 'student' ? (
+            <p>Click on the bookshelf to browse study materials created by your educators!</p>
+          ) : (
+            <p>Click on the bookshelf to focus the camera and see book animations!</p>
+          )}
           {isBookshelfView && (
             <button onClick={resetCamera} className="reset-camera-btn">
               Reset Camera View
@@ -142,6 +158,12 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout }) => {
           )}
         </div>
       </div>
+
+      {/* Student Bookshelf Overlay */}
+      <StudentBookshelfOverlay
+        isOpen={isBookshelfOverlayOpen}
+        onClose={handleCloseBookshelfOverlay}
+      />
     </div>
   );
 };

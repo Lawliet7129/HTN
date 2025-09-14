@@ -1,7 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up PDF.js worker - use a simple approach
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// Set up PDF.js worker - use local worker file
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 export interface ThumbnailOptions {
   width?: number;

@@ -29,10 +29,10 @@ export const convertImageToText = async (file: File): Promise<OCRResponse> => {
     formData.append('file', file);
 
     // Make request to backend
-      const response = await fetch(`${BACKEND_URL}/convert-image`, {
-        method: 'POST',
-        body: formData,
-      });
+    const response = await fetch(`${BACKEND_URL}/convert-image`, {
+      method: 'POST',
+      body: formData,
+    });
 
     if (!response.ok) {
       const errorText = await response.text();

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up PDF.js worker - use a simple approach
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// Set up PDF.js worker - use local worker file
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 interface PdfViewerProps {
   pdfUrl: string | Blob;
@@ -24,19 +24,33 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ pdfUrl, onClose, title = '
   }, [pdfUrl]);
 
   const loadPDF = async () => {
+    if (!pdfUrl || pdfUrl === '') {
+      setError('No PDF URL provided');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Loading PDF:', pdfUrl);
+      console.log('PDF URL type:', typeof pdfUrl);
+      console.log('PDF URL value:', pdfUrl);
 
-      let pdfData;
+      let loadingTask;
       if (pdfUrl instanceof Blob) {
         const arrayBuffer = await pdfUrl.arrayBuffer();
-        pdfData = { data: arrayBuffer };
+        loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+          cMapUrl: '/cmaps/',
+          cMapPacked: true,
+        });
       } else {
-        pdfData = pdfUrl;
+        loadingTask = pdfjsLib.getDocument(pdfUrl, {
+          cMapUrl: '/cmaps/',
+          cMapPacked: true,
+        });
       }
-
-      const loadingTask = pdfjsLib.getDocument(pdfData);
       const pdf = await loadingTask.promise;
       
       pdfRef.current = pdf;
@@ -45,7 +59,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ pdfUrl, onClose, title = '
       setIsLoading(false);
     } catch (err) {
       console.error('Error loading PDF:', err);
-      setError('Failed to load PDF');
+      setError(`Failed to load PDF: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsLoading(false);
     }
   };

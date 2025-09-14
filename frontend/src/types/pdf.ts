@@ -25,6 +25,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Smith',
     updatedAt: '2024-01-15T10:30:00Z',
     pages: 45,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['calculus', 'mathematics', 'week1']
   },
   {
@@ -33,6 +34,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Smith',
     updatedAt: '2024-01-22T14:15:00Z',
     pages: 52,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['calculus', 'mathematics', 'week2']
   },
   {
@@ -41,6 +43,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Johnson',
     updatedAt: '2024-01-29T09:45:00Z',
     pages: 38,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['mathematics', 'induction', 'week3']
   },
   {
@@ -49,6 +52,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Prof. Davis',
     updatedAt: '2024-02-05T16:20:00Z',
     pages: 67,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['linear-algebra', 'mathematics']
   },
   {
@@ -57,6 +61,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Wilson',
     updatedAt: '2024-02-12T11:10:00Z',
     pages: 89,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['physics', 'lab', 'experiments']
   },
   {
@@ -65,6 +70,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Safety Committee',
     updatedAt: '2024-02-19T13:30:00Z',
     pages: 23,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['chemistry', 'safety', 'guidelines']
   },
   {
@@ -73,6 +79,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Brown',
     updatedAt: '2024-02-26T15:45:00Z',
     pages: 156,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['history', 'science', 'general']
   },
   {
@@ -81,6 +88,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Taylor',
     updatedAt: '2024-03-05T12:00:00Z',
     pages: 78,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['research', 'methods', 'academic']
   },
   {
@@ -89,6 +97,7 @@ export const mockPdfDocs: PdfDoc[] = [
     author: 'Dr. Anderson',
     updatedAt: '2024-03-12T14:30:00Z',
     pages: 94,
+    coverUrl: '/sample-pdfs/CIS_3200_HW_2.pdf', // Using same PDF for demo
     tags: ['statistics', 'mathematics', 'fundamentals']
   }
 ];
