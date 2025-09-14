@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Classroom } from './Classroom';
+import { Human } from './Human';
 import { StudentBookshelfOverlay } from '../bookshelf/StudentBookshelfOverlay';
 import { useAuth } from '../../contexts/AuthContext';
 import './ClassroomView.css';
@@ -31,6 +32,7 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout, onSwitch
     setIsBookshelfOverlayOpen(false);
   };
 
+
   return (
     <div className="classroom-view">
       <div className="classroom-header">
@@ -56,7 +58,7 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout, onSwitch
       <div className="canvas-container">
         <Canvas
           camera={{ 
-            position: [90, 90, 120], 
+            position: [60, 75, 85], 
             fov: 30,
             near: 0.1,
             far: 2000
@@ -79,6 +81,20 @@ export const ClassroomView: React.FC<ClassroomViewProps> = ({ onLogout, onSwitch
           
           {/* Classroom Model */}
           <Classroom onModelLoaded={handleModelLoaded} onBookshelfClick={handleBookshelfClick} />
+          
+          {/* Human Character */}
+          <group position={[-40, 10, -65]} scale={[34, 34, 34]}>
+            <Human 
+              isWalking={false}
+              walkingSpeed={1.5}
+              onModelLoaded={(model) => {
+                console.log('Human model loaded in classroom:', model);
+              }}
+              onHierarchyBuilt={(hierarchy) => {
+                console.log('Human hierarchy built in classroom:', hierarchy);
+              }}
+            />
+          </group>
           
           {/* Controls */}
           <OrbitControls

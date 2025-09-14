@@ -1,27 +1,65 @@
 import React, { useRef, useEffect } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Group, Mesh, Bone, Skeleton, Object3D } from 'three';
-import * as THREE from 'three';
+import { Group, Object3D } from 'three';
 
 interface ClassroomProps {
   onModelLoaded?: (model: Group) => void;
   onBookshelfClick?: () => void;
+  onHierarchyBuilt?: (hierarchy: NodeHierarchy) => void;
 }
 
-export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelfClick }) => {
+interface NodeHierarchy {
+  name: string;
+  type: string;
+  children: NodeHierarchy[];
+  userData: any;
+  position: { x: number; y: number; z: number };
+  scale: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number };
+}
+
+export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelfClick, onHierarchyBuilt }) => {
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF('/assets/glb/classroom.glb');
   const [scaledScene, setScaledScene] = React.useState<Group | null>(null);
+  const [nodeHierarchy, setNodeHierarchy] = React.useState<NodeHierarchy | null>(null);
 
-  // Function to recursively log object structure (removed for performance)
-  const logObjectStructure = (obj: Object3D, depth: number = 0, parentName: string = '') => {
-    // Console logging removed for better performance
+  // Function to build node hierarchy structure
+  const buildNodeHierarchy = (obj: Object3D, depth: number = 0): NodeHierarchy => {
+    const hierarchy: NodeHierarchy = {
+      name: obj.name || `Unnamed_${obj.type}`,
+      type: obj.type,
+      children: [],
+      userData: { ...obj.userData },
+      position: {
+        x: obj.position.x,
+        y: obj.position.y,
+        z: obj.position.z
+      },
+      scale: {
+        x: obj.scale.x,
+        y: obj.scale.y,
+        z: obj.scale.z
+      },
+      rotation: {
+        x: obj.rotation.x,
+        y: obj.rotation.y,
+        z: obj.rotation.z
+      }
+    };
+
+    // Recursively build children hierarchy
+    obj.children.forEach(child => {
+      hierarchy.children.push(buildNodeHierarchy(child, depth + 1));
+    });
+
+    return hierarchy;
   };
 
-  // Function to find and mark interactive objects (console logs removed)
-  const findAndLogObjects = (obj: Object3D) => {
-    const foundObjects: { [key: string]: Object3D[] } = {
+  // Function to identify interactive objects and build hierarchy
+  const identifyInteractiveObjects = (obj: Object3D) => {
+    const interactiveObjects: { [key: string]: Object3D[] } = {
       'desk': [],
       'bookshelf': [],
       'bulletin': [],
@@ -33,43 +71,21 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
     obj.traverse((child) => {
       const name = child.name.toLowerCase();
       
-      // Look for desks (we know Desk1 and Desk2 exist)
+      // Categorize objects by type
       if (name.includes('desk')) {
-        foundObjects['desk'].push(child);
-      }
-      
-      // Look for bookshelf elements (might be in polySurface or other objects)
-      if (name.includes('bookshelf') || name.includes('shelf') || name.includes('book')) {
-        foundObjects['bookshelf'].push(child);
-      }
-      
-      // Look for bulletin board elements
-      if (name.includes('bulletin') || name.includes('board') || name.includes('notice')) {
-        foundObjects['bulletin'].push(child);
-      }
-      
-      // Look for type/text elements (typeMesh1, typeMesh2, typeMesh3)
-      if (name.includes('type')) {
-        foundObjects['type'].push(child);
-      }
-      
-      // Look for complex surfaces that might be interactive areas
-      if (name.includes('polysurface')) {
-        foundObjects['polySurface'].push(child);
+        interactiveObjects['desk'].push(child);
+      } else if (name.includes('bookshelf') || name.includes('shelf') || name.includes('book')) {
+        interactiveObjects['bookshelf'].push(child);
+      } else if (name.includes('bulletin') || name.includes('board') || name.includes('notice')) {
+        interactiveObjects['bulletin'].push(child);
+      } else if (name.includes('type')) {
+        interactiveObjects['type'].push(child);
+      } else if (name.includes('polysurface')) {
+        interactiveObjects['polySurface'].push(child);
       }
     });
     
-    return foundObjects;
-  };
-
-  // Function to log skeleton and bone information (console logs removed)
-  const logSkeletonInfo = (obj: Object3D) => {
-    // Console logging removed for better performance
-  };
-
-  // Function to log material information (console logs removed)
-  const logMaterialInfo = (obj: Object3D) => {
-    // Console logging removed for better performance
+    return interactiveObjects;
   };
 
   useEffect(() => {
@@ -81,11 +97,20 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
       clonedScene.scale.set(800, 800, 800);
       clonedScene.position.set(-20, 10, -20);
       
-      // Find and mark interactive objects
-      findAndLogObjects(clonedScene);
+      // Build node hierarchy for the 3D model
+      const hierarchy = buildNodeHierarchy(clonedScene);
+      setNodeHierarchy(hierarchy);
+      
+      // Call the hierarchy callback if provided
+      if (onHierarchyBuilt) {
+        onHierarchyBuilt(hierarchy);
+      }
+      
+      // Identify interactive objects
+      identifyInteractiveObjects(clonedScene);
       
       // Create interactive components
-      const interactiveComponents = createInteractiveComponents(clonedScene);
+      createInteractiveComponents(clonedScene);
       
       // Set the scaled scene for rendering
       setScaledScene(clonedScene);
@@ -96,6 +121,21 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
       }
     }
   }, [scene, onModelLoaded]);
+
+  // Log hierarchy information when it's built
+  useEffect(() => {
+    if (nodeHierarchy) {
+      const summary = getInteractiveObjectsSummary(nodeHierarchy);
+      const hierarchyText = formatHierarchyForDisplay(nodeHierarchy);
+      
+      // Store hierarchy information in a way that can be accessed for debugging
+      (window as any).classroomHierarchy = {
+        hierarchy: nodeHierarchy,
+        summary: summary,
+        formattedText: hierarchyText
+      };
+    }
+  }, [nodeHierarchy]);
 
   // Function to create interactive components based on model structure
   const createInteractiveComponents = (model: Group) => {
@@ -115,7 +155,7 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
         child.userData.isInteractive = true;
         child.userData.interactionType = 'desk';
         child.userData.description = 'Scheduling and meeting management';
-        console.log(`✅ Marked ${child.name} as interactive desk`);
+        child.userData.hierarchyPath = getObjectHierarchyPath(child);
       }
       
       // Mark type elements as potential bulletin boards or signs
@@ -124,7 +164,7 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
         child.userData.isInteractive = true;
         child.userData.interactionType = 'bulletin';
         child.userData.description = 'Q&A forum and discussions';
-        console.log(`✅ Marked ${child.name} as interactive bulletin board`);
+        child.userData.hierarchyPath = getObjectHierarchyPath(child);
       }
       
       // Mark bookshelf structures as interactive
@@ -141,13 +181,13 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
           child.userData.isInteractive = true;
           child.userData.interactionType = 'bookshelf';
           child.userData.description = 'AI-powered material creation and storage';
-          console.log(`✅ Marked ${child.name} as interactive bookshelf (${child.children.length} children)`);
+          child.userData.hierarchyPath = getObjectHierarchyPath(child);
         } else {
           // Mark smaller polySurface objects as individual books
           child.userData.isInteractive = true;
           child.userData.interactionType = 'book';
           child.userData.description = 'Individual book - click to view material';
-          console.log(`📖 Marked ${child.name} as individual book (${child.children.length} children)`);
+          child.userData.hierarchyPath = getObjectHierarchyPath(child);
         }
       }
     });
@@ -162,22 +202,85 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
             descendant.userData.interactionType = 'book';
             descendant.userData.description = 'Individual book - click to view material';
             descendant.userData.parentBookshelf = child.name;
-            console.log(`📖 Marked ${descendant.name} as book with parent: ${child.name}`);
+            descendant.userData.hierarchyPath = getObjectHierarchyPath(descendant);
           }
         });
       }
     });
     
-    console.log(`📊 Interactive Objects Summary:`);
-    console.log(`  - Desks: ${interactiveObjects.desks.length}`);
-    console.log(`  - Bookshelves: ${interactiveObjects.bookshelves.length}`);
-    console.log(`  - Bulletin Boards: ${interactiveObjects.bulletinBoards.length}`);
-    
     return interactiveObjects;
   };
 
+  // Function to get the hierarchy path of an object
+  const getObjectHierarchyPath = (obj: Object3D): string => {
+    const path: string[] = [];
+    let current: Object3D | null = obj;
+    
+    while (current) {
+      path.unshift(current.name || current.type);
+      current = current.parent;
+    }
+    
+    return path.join(' → ');
+  };
+
+  // Function to format hierarchy for display
+  const formatHierarchyForDisplay = (hierarchy: NodeHierarchy, depth: number = 0): string => {
+    const indent = '  '.repeat(depth);
+    let result = `${indent}${hierarchy.name} (${hierarchy.type})\n`;
+    
+    if (hierarchy.userData && Object.keys(hierarchy.userData).length > 0) {
+      result += `${indent}  UserData: ${JSON.stringify(hierarchy.userData, null, 2)}\n`;
+    }
+    
+    result += `${indent}  Position: (${hierarchy.position.x.toFixed(2)}, ${hierarchy.position.y.toFixed(2)}, ${hierarchy.position.z.toFixed(2)})\n`;
+    result += `${indent}  Scale: (${hierarchy.scale.x.toFixed(2)}, ${hierarchy.scale.y.toFixed(2)}, ${hierarchy.scale.z.toFixed(2)})\n`;
+    result += `${indent}  Rotation: (${hierarchy.rotation.x.toFixed(2)}, ${hierarchy.rotation.y.toFixed(2)}, ${hierarchy.rotation.z.toFixed(2)})\n`;
+    
+    hierarchy.children.forEach(child => {
+      result += formatHierarchyForDisplay(child, depth + 1);
+    });
+    
+    return result;
+  };
+
+  // Function to get interactive objects summary
+  const getInteractiveObjectsSummary = (hierarchy: NodeHierarchy): { [key: string]: number } => {
+    const summary: { [key: string]: number } = {
+      desks: 0,
+      bookshelves: 0,
+      bulletinBoards: 0,
+      books: 0,
+      total: 0
+    };
+
+    const traverse = (node: NodeHierarchy) => {
+      if (node.userData?.isInteractive) {
+        summary.total++;
+        switch (node.userData.interactionType) {
+          case 'desk':
+            summary.desks++;
+            break;
+          case 'bookshelf':
+            summary.bookshelves++;
+            break;
+          case 'bulletin':
+            summary.bulletinBoards++;
+            break;
+          case 'book':
+            summary.books++;
+            break;
+        }
+      }
+      node.children.forEach(traverse);
+    };
+
+    traverse(hierarchy);
+    return summary;
+  };
+
   // Animation frame for continuous updates (optional)
-  useFrame((state, delta) => {
+  useFrame(() => {
     // You can add any continuous updates here
     // For example, rotating objects, updating animations, etc.
   });
@@ -190,24 +293,18 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
   const handleObjectClick = (event: any) => {
     const object = event.object;
     
-    console.log(`🖱️ Clicked on: ${object.name}`, object.userData);
-    console.log(`🔍 Object has parentBookshelf: ${object.userData.parentBookshelf || 'NO'}`);
-    
     // Check if this object or its parent is interactive
     let interactiveObject = object;
     let interactionType = object.userData.interactionType;
     
     // If clicked object is a book but has a parent bookshelf, treat it as bookshelf click
     if (object.userData.interactionType === 'book' && object.userData.parentBookshelf) {
-      console.log(`🔍 Book has parentBookshelf: ${object.userData.parentBookshelf}`);
       // Find the parent bookshelf object
       const parent = object.parent;
-      console.log(`🔍 Parent object: ${parent?.name}, interactionType: ${parent?.userData?.interactionType}`);
       
       if (parent && parent.userData.interactionType === 'bookshelf') {
         interactiveObject = parent;
         interactionType = 'bookshelf';
-        console.log(`📚 Book clicked, but treating as bookshelf click (parent: ${parent.name})`);
       } else {
         // Try to find the bookshelf parent by traversing up the hierarchy
         let currentParent = parent;
@@ -216,7 +313,6 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
           if (currentParent.userData.interactionType === 'bookshelf') {
             interactiveObject = currentParent;
             interactionType = 'bookshelf';
-            console.log(`📚 Found bookshelf parent by traversing: ${currentParent.name}`);
             break;
           }
         }
@@ -224,39 +320,30 @@ export const Classroom: React.FC<ClassroomProps> = ({ onModelLoaded, onBookshelf
     }
     
     if (interactiveObject.userData.isInteractive) {
-      console.log(`✅ Interactive object clicked: ${interactionType}`);
-      
       // Handle different interaction types
       switch (interactionType) {
         case 'desk':
-          console.log('🖥️ Desk clicked - opening scheduling interface...');
           // TODO: Open scheduling modal/interface
           break;
         case 'bookshelf':
-          console.log('📚 Bookshelf clicked - triggering camera animation...');
           // Trigger camera animation to focus on bookshelf
           if (onBookshelfClick) {
             onBookshelfClick();
           }
           break;
         case 'book':
-          console.log('📖 Individual book clicked - opening book interface...');
           // TODO: Open individual book/material interface
           // Don't trigger camera animation for individual books
           break;
         case 'bulletin':
-          console.log('📋 Bulletin board clicked - opening Q&A interface...');
           // TODO: Open bulletin board interface
           break;
         default:
-          console.log('❓ Unknown interaction type:', interactionType);
           break;
       }
       
       // Prevent event bubbling
       event.stopPropagation();
-    } else {
-      console.log('❌ Non-interactive object clicked');
     }
   };
 

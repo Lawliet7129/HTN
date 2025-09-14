@@ -126,6 +126,7 @@
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
+
 /* Responsive design */
 @media (max-width: 768px) {
   .classroom-header {
