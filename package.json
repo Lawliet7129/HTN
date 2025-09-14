@@ -1,7 +1,7 @@
 {
-  "name": "3d-virtual-classroom",
+  "name": "cogniverse",
   "version": "1.0.0",
-  "description": "A Three.js-based 3D classroom with AI-powered LaTeX conversion",
+  "description": "Cogniverse - An interactive 3D learning space with AI-powered LaTeX conversion",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:ai-services\"",

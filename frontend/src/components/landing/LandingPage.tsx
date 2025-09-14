@@ -28,7 +28,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ isAuthenticated, onGet
     <div className={`landing-overlay ${isTransitioning ? 'transitioning' : ''}`}>
       <div className="landing-content">
         <div className="logo-section">
-          <h1 className="logo">Canvasify</h1>
+          <h1 className="logo">Cogniverse</h1>
           <p className="tagline">Transform your classroom into an interactive 3D learning space</p>
         </div>
         

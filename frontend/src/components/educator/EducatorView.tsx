@@ -9,9 +9,10 @@ import { PdfSheet } from './PdfSheet';
 
 interface EducatorViewProps {
   onLogout: () => void;
+  onSwitchToStudentView?: () => void;
 }
 
-export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
+export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout, onSwitchToStudentView }) => {
   const [pdfs, setPdfs] = useState<PdfDoc[]>(mockPdfDocs);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -99,15 +100,27 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
     <div className="educator-view">
       <header className="educator-header">
         <div className="header-content">
-          <h1 className="header-title">PDF Library</h1>
-          <button onClick={onLogout} className="logout-button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16,17 21,12 16,7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Logout
-          </button>
+          <h1 className="header-title">Cogniverse</h1>
+          <div className="header-buttons">
+            {onSwitchToStudentView && (
+              <button onClick={onSwitchToStudentView} className="student-view-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="m22 21-3-3m0 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                </svg>
+                Student View
+              </button>
+            )}
+            <button onClick={onLogout} className="logout-button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
@@ -184,6 +197,12 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
           align-items: center;
         }
 
+        .header-buttons {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
         .header-title {
           margin: 0;
           font-size: 1.75rem;
@@ -192,6 +211,25 @@ export const EducatorView: React.FC<EducatorViewProps> = ({ onLogout }) => {
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+        }
+
+        .student-view-button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: #28a745;
+          color: white;
+          border: none;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .student-view-button:hover {
+          background: #218838;
+          transform: translateY(-1px);
         }
 
         .logout-button {

@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'classroom-frontend',
+      name: 'cogniverse-frontend',
       script: 'npm',
       args: 'start',
       cwd: './frontend',

@@ -29,6 +29,31 @@
   background-clip: text;
 }
 
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.educator-view-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #28a745;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.educator-view-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
 .logout-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);

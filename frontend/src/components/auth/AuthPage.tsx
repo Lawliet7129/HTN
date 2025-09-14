@@ -71,14 +71,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <h1 className="auth-logo">Canvasify</h1>
+          <h1 className="auth-logo">Cogniverse</h1>
           <h2 className="auth-title">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
           <p className="auth-subtitle">
             {isLogin 
-              ? 'Sign in to access your virtual classroom' 
-              : 'Join Canvasify and transform your learning experience'
+              ? 'Sign in to access Cogniverse' 
+              : 'Join Cogniverse and transform your learning experience'
             }
           </p>
         </div>

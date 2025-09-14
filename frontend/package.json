@@ -1,7 +1,7 @@
 {
-  "name": "classroom-frontend",
+  "name": "cogniverse-frontend",
   "version": "1.0.0",
-  "description": "3D Virtual Classroom Frontend",
+  "description": "Cogniverse Frontend - Interactive 3D Learning Space",
   "type": "module",
   "scripts": {
     "dev": "vite",

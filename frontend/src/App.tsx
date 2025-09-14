@@ -68,6 +68,7 @@ function BackgroundScene() {
 function AppContent() {
   const { isAuthenticated, login, signup, logout, isLoading, user } = useAuth();
   const [showLanding, setShowLanding] = useState(true);
+  const [currentView, setCurrentView] = useState<'educator' | 'student'>('educator');
 
   // Debug user data
   console.log('App - user:', user);
@@ -88,13 +89,22 @@ function AppContent() {
   const handleLogout = () => {
     logout();
     setShowLanding(true);
+    setCurrentView('educator'); // Reset to educator view on logout
+  };
+
+  const handleSwitchToStudentView = () => {
+    setCurrentView('student');
+  };
+
+  const handleSwitchToEducatorView = () => {
+    setCurrentView('educator');
   };
 
   if (isLoading) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner"></div>
-        <p>Loading Canvasify...</p>
+        <p>Loading Cogniverse...</p>
       </div>
     );
   }
@@ -131,10 +141,10 @@ function AppContent() {
           path="/classroom" 
           element={
             isAuthenticated ? (
-              user?.userType === 'educator' ? (
-                <EducatorView onLogout={handleLogout} />
+              (user?.userType === 'educator' && currentView === 'educator') ? (
+                <EducatorView onLogout={handleLogout} onSwitchToStudentView={handleSwitchToStudentView} />
               ) : (
-                <ClassroomView onLogout={handleLogout} />
+                <ClassroomView onLogout={handleLogout} onSwitchToEducatorView={handleSwitchToEducatorView} />
               )
             ) : (
               <Navigate to="/auth" replace />
