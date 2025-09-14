@@ -37,6 +37,7 @@
   "author": "HTN Team",
   "license": "MIT",
   "devDependencies": {
+    "@types/katex": "^0.16.7",
     "concurrently": "^8.2.2"
   },
   "workspaces": [
@@ -47,5 +48,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "katex": "^0.16.22"
   }
 }
